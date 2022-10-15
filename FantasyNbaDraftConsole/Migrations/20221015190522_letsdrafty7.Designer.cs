@@ -3,6 +3,7 @@ using System;
 using FantasyNbaDraftConsole.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FantasyNbaDraftConsole.Migrations
 {
     [DbContext(typeof(NBADbContext))]
-    partial class NBADbContextModelSnapshot : ModelSnapshot
+    [Migration("20221015190522_letsdrafty7")]
+    partial class letsdrafty7
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -100,7 +102,12 @@ namespace FantasyNbaDraftConsole.Migrations
                     b.Property<byte>("PositionTypeId")
                         .HasColumnType("smallint");
 
+                    b.Property<int?>("PlayerId1")
+                        .HasColumnType("integer");
+
                     b.HasKey("PlayerId", "PositionTypeId");
+
+                    b.HasIndex("PlayerId1");
 
                     b.ToTable("Positions");
                 });
@@ -183,11 +190,17 @@ namespace FantasyNbaDraftConsole.Migrations
 
             modelBuilder.Entity("FantasyNbaDraftConsole.Data.Models.Position", b =>
                 {
-                    b.HasOne("FantasyNbaDraftConsole.Data.Models.Player", null)
-                        .WithMany("Positions")
+                    b.HasOne("FantasyNbaDraftConsole.Data.Models.Player", "Player")
+                        .WithMany()
                         .HasForeignKey("PlayerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("FantasyNbaDraftConsole.Data.Models.Player", null)
+                        .WithMany("Positions")
+                        .HasForeignKey("PlayerId1");
+
+                    b.Navigation("Player");
                 });
 
             modelBuilder.Entity("FantasyNbaDraftConsole.Data.Models.Projection", b =>

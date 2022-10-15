@@ -65,13 +65,13 @@ namespace FantasyNbaDraftConsole
                 configCmd.Command("import_players", importPlayersCmd =>
                 {
                     importPlayersCmd.Description = "Set import csv file.";
-                    var path = importPlayersCmd.Argument("path", "csv Path").IsRequired();
+                    var path = importPlayersCmd.Argument<string>("path", "csv Path").IsRequired();
 
                     importPlayersCmd.OnExecute(() =>
                     {
-                        //operations_.SeedPlayers(path);
+                        var successNumber = operations_.SeedPlayers(path.Value);
 
-                        Console.WriteLine("Players Seeded");
+                        Console.WriteLine($"Players Seeded: {successNumber}");
 
                         return;
                     });

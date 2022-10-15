@@ -30,7 +30,7 @@
         /// <summary>
         /// 
         /// </summary>
-        private IConfiguration config_ { get; set; }
+        private IConfiguration Config_ { get; set; }
 
         /// <summary>
         /// 
@@ -46,7 +46,7 @@
                         .SetBasePath(Directory.GetCurrentDirectory())
                         .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-            config_ = builder.Build();
+            Config_ = builder.Build();
         }
 
         /// <summary>
@@ -67,13 +67,6 @@
 
             modelBuilder.Entity<Player>()
                 .Property(p => p.PlayerId)
-                .UseIdentityAlwaysColumn();
-
-            modelBuilder.Entity<Position>()
-                .HasKey(p => p.PositionId);
-
-            modelBuilder.Entity<Position>()
-                .Property(p => p.PositionId)
                 .UseIdentityAlwaysColumn();
 
             modelBuilder.Entity<Team>()
@@ -99,20 +92,26 @@
                 .HasForeignKey(p => p.TeamId);
 
             modelBuilder.Entity<Player>()
-                .HasMany<Position>();
+                .HasMany(p => p.Positions);
 
             modelBuilder.Entity<Player>()
-                .HasMany(p => p.Projections)
-                .WithOne(pr => pr.Player)
-                .HasForeignKey(pr => pr.PlayerId);
+                .HasMany(p => p.Projections);
 
             modelBuilder.Entity<Player>()
-                .HasMany(p => p.ProjectionTotals)
-                .WithOne(pr => pr.Player)
-                .HasForeignKey(pr => pr.PlayerId);
+                .HasMany(p => p.ProjectionTotals);
+
+            modelBuilder.Entity<Player>()
+                .HasIndex(p => p.Name);
 
             modelBuilder.Entity<DraftConfig>()
                 .HasKey(dc => dc.LeagueId);
+
+            modelBuilder.Entity<Position>()
+                .HasKey(pr => new
+                {
+                    pr.PlayerId,
+                    pr.PositionTypeId
+                });
 
             modelBuilder.Entity<Projection>()
                 .HasKey(pr => new
@@ -128,8 +127,9 @@
                     pr.ProjectionTotalsTypeId
                 });
 
-            modelBuilder.HasPostgresEnum<Constants.ProjectionType>();
-            modelBuilder.HasPostgresEnum<Constants.ProjectionTotalsType>();
+            modelBuilder.HasPostgresEnum<Constants.PositionTypeId>();
+            modelBuilder.HasPostgresEnum<Constants.ProjectionTypeId>();
+            modelBuilder.HasPostgresEnum<Constants.ProjectionTotalsTypeId>();
 
             base.OnModelCreating(modelBuilder);
         }
@@ -139,6 +139,6 @@
         /// </summary>
         /// <param name="opts"></param>
         protected override void OnConfiguring(DbContextOptionsBuilder opts) =>  
-            opts.UseNpgsql(config_.GetConnectionString("DefaultConnection"));
+            opts.UseNpgsql(Config_.GetConnectionString("DefaultConnection"));
     }
 }

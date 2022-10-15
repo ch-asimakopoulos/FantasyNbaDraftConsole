@@ -3,7 +3,7 @@
     /// <summary>
     /// 
     /// </summary>
-    public enum ProjectionType : byte
+    public enum ProjectionTotalsTypeId : byte
     {
         /// <summary>
         /// 
@@ -43,16 +43,46 @@
         /// <summary>
         /// 
         /// </summary>
-        FieldGoalPercentage = 7,
+        FieldGoalsMade = 7,
 
         /// <summary>
         /// 
         /// </summary>
-        ThreePointersMade = 8,
+        FieldGoalsAttempted = 8,
 
         /// <summary>
         /// 
         /// </summary>
-        FreeThrowPercentage = 9
+        ThreePointersMade = 9,
+
+        /// <summary>
+        /// 
+        /// </summary>
+        ThreePointersAttempted = 10,
+
+        /// <summary>
+        /// 
+        /// </summary>
+        FreeThrowsMade = 11,
+
+        /// <summary>
+        /// 
+        /// </summary>
+        FreeThrowsAttempted = 12,
+
+        /// <summary>
+        /// 
+        /// </summary>
+        GamesPlayed = 13,
+
+        /// <summary>
+        /// 
+        /// </summary>
+        MinutesPerGame = 14, 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        TotalRanking = 15
     }
 }

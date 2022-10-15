@@ -13,16 +13,11 @@
         /// <summary>
         /// 
         /// </summary>
-        public virtual Player Player { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
         public decimal ProjectionValue { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        public Constants.ProjectionTotalsType ProjectionTotalsTypeId { get; set; }
+        public Constants.ProjectionTotalsTypeId ProjectionTotalsTypeId { get; set; }
     }
 }

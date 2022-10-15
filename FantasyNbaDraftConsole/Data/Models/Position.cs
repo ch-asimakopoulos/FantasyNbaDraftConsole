@@ -8,11 +8,11 @@
         /// <summary>
         /// 
         /// </summary>
-        public byte PositionId { get; set; }
+        public int PlayerId { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        public string PositionName { get; set; }
+        public Constants.PositionTypeId PositionTypeId { get; set; }
     }
 }

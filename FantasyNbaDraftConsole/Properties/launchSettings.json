@@ -2,7 +2,7 @@
   "profiles": {
     "FantasyNbaDraftConsole": {
       "commandName": "Project",
-      "commandLineArgs": "draft positions list"
+      "commandLineArgs": "database import_players \"C:\\2k23.csv\""
     }
   }
 }

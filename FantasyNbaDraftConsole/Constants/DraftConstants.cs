@@ -16,13 +16,5 @@ namespace FantasyNbaDraftConsole.Constants
         /// 
         /// </summary>
         public const string LeagueName = "ClashifiedLeague";
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public static readonly IReadOnlySet<string> DefaultPositions = new HashSet<string>
-        {
-            "PG", "SG", "SF", "PF", "C", "F", "G"
-        };
     }
 }

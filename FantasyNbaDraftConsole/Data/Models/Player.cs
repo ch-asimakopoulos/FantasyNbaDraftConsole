@@ -51,11 +51,23 @@
         /// <summary>
         /// 
         /// </summary>
+        public virtual List<Position> Positions { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public virtual List<Projection> Projections { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
         public virtual List<ProjectionTotal> ProjectionTotals { get; set; }
+
+        public Player()
+        {
+            Positions = new List<Position>();
+            Projections = new List<Projection>();
+            ProjectionTotals = new List<ProjectionTotal>();
+        }
     }
 }

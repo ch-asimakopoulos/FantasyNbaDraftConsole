@@ -15,17 +15,12 @@
         /// <summary>
         /// 
         /// </summary>
-        public virtual Player Player { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
         public decimal ProjectionValue { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        public Constants.ProjectionType ProjectionTypeId { get; set; }
+        public Constants.ProjectionTypeId ProjectionTypeId { get; set; }
 
         /// <summary>
         /// 

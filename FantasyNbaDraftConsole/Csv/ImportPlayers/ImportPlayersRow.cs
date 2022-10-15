@@ -1,83 +1,89 @@
-﻿namespace FantasyNbaDraftConsole.Constants
+﻿namespace FantasyNbaDraftConsole.Csv.ImportPlayers
 {
     /// <summary>
     /// 
     /// </summary>
-    public enum ProjectionTotalsType : byte
+    public class ImportPlayersRow
     {
         /// <summary>
         /// 
         /// </summary>
-        Invalid = 0,
+        public string Rank { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        Points = 1,
+        public string Name { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        Assists = 2,
+        public string Games { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        Rebounds = 3,
+        public string Blocks { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        Blocks = 4,
+        public string Points { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        Steals = 5,
+        public string Steals { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        Turnovers = 6,
+        public string Assists { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        FieldGoalsMade = 7,
+        public string NbaTeam { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        FieldGoalsAttempted = 8,
+        public string Turnovers { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        ThreePointersMade = 9,
+        public string Positions { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        ThreePointersAttempted = 10,
+        public string TotalRanking { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        FreeThrowsMade = 11,
+        public string TotalRebounds { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        FreeThrowsAttempted = 12,
+        public string MinutesPerGame { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        GamesPlayed = 13,
+        public string ThreePointersMade { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        MinutesPerGame = 14
+        public string FieldGoalPercentage { get; set; }
+        
+        /// <summary>
+        /// 
+
+        /// </summary>
+        public string FreeThrowPercentage { get; set; }
     }
 }
