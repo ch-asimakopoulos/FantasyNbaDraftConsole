@@ -13,6 +13,11 @@
         /// <summary>
         /// 
         /// </summary>
+        public virtual Player Player { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public decimal ProjectionValue { get; set; }
 
         /// <summary>

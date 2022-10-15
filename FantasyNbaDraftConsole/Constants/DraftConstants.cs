@@ -10,7 +10,12 @@ namespace FantasyNbaDraftConsole.Constants
         /// <summary>
         /// 
         /// </summary>
-        public const decimal PuntCutoff = -1.6M;
+        public const int PlayersToReturn = 20;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public const decimal PuntCutoff = -1.8M;
 
         /// <summary>
         /// 

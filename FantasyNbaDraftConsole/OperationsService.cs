@@ -287,6 +287,31 @@
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="number"></param>
+        /// <returns></returns>
+        public List<Data.Dto.BestPlayersInfo> GetBestAvailablePlayers(int? number)
+        {
+            using (var db = new Data.NBADbContext())
+            {
+                var toReturn = number ?? Constants.DraftConstants.PlayersToReturn;
+
+                return db.ProjectionTotals.Where(pjt => pjt.ProjectionTotalsTypeId == Constants.ProjectionTotalsTypeId.TotalRanking)
+                    .OrderByDescending(pjt => pjt.ProjectionValue).Take(toReturn)
+                    .Select(p => new Data.Dto.BestPlayersInfo
+                    {
+                        Name = p.Player.Name,
+                        Ranking = p.ProjectionValue,
+                        Positions = p.Player.Positions.Select(x => x.PositionTypeId.ToString()).ToList()
+                    }
+                    ).ToList();
+            }
+
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="positions"></param>
         /// <returns></returns>
         private IEnumerable<Data.Models.Position> MapToPositions(string[] positions)

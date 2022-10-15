@@ -1,4 +1,6 @@
-﻿namespace FantasyNbaDraftConsole
+﻿using System.Collections.Generic;
+
+namespace FantasyNbaDraftConsole
 {
     /// <summary>
     /// 
@@ -31,5 +33,12 @@
         /// </summary>
         /// <returns></returns>
         public int SeedPlayers(string filePath);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name=""></param>
+        /// <returns></returns>
+        public List<Data.Dto.BestPlayersInfo> GetBestAvailablePlayers(int? number);
     }
 }

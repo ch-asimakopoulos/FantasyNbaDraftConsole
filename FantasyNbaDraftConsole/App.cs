@@ -2,13 +2,14 @@
 namespace FantasyNbaDraftConsole
 {
     using System;
-
+    using System.Linq;
     using McMaster.Extensions.CommandLineUtils;
-    
+    using Microsoft.VisualBasic;
+
     /// <summary>
     /// 
     /// </summary>
-    public class App
+    public class App 
     {
         /// <summary>
         /// 
@@ -76,38 +77,6 @@ namespace FantasyNbaDraftConsole
                         return;
                     });
                 });
-
-                configCmd.Command("star_players", starPlayersCmd =>
-                {
-                    starPlayersCmd.Description = "Set player name you wish to star.";
-                    var name = starPlayersCmd.Argument<string>("player", "Player to star").IsRequired();
-
-                    starPlayersCmd.OnExecute(() =>
-                    {
-                        var more = false;
-                        var playerName = name.Value;
-                        do
-                        {
-                            var success = operations_.StarPlayer(playerName);
-
-                            if(success)
-                            {
-                                Console.WriteLine($"Player Starred: {playerName}");
-                            }
-
-                            more = Prompt.GetYesNo("Wanna star more players?", true);
-
-                            if (more)
-                            {
-                                Console.WriteLine("Type player name you wish to star: ");
-                                playerName = Console.ReadLine();
-                            }
-
-                        } while (more);
-
-                        return;
-                    });
-                });
             });
 
             app.HelpOption(inherited: true);
@@ -129,7 +98,7 @@ namespace FantasyNbaDraftConsole
                         return;
                     });
 
-                    pCmd.Command("init", ipCmd =>
+                    pCmd.Command("init_positions", ipCmd =>
                     {
                         ipCmd.OnExecute(() =>
                         {
@@ -143,7 +112,7 @@ namespace FantasyNbaDraftConsole
                         });
                     });
 
-                    pCmd.Command("list", lpCmd =>
+                    pCmd.Command("list_positions", lpCmd =>
                     {
                         lpCmd.OnExecute(() =>
                         {
@@ -155,6 +124,56 @@ namespace FantasyNbaDraftConsole
 
                             return;
                         });
+                    });
+                });
+
+                configCmd.Command("star_players", starPlayersCmd =>
+                {
+                    starPlayersCmd.Description = "Set player name you wish to star.";
+                    var name = starPlayersCmd.Argument<string>("player", "Player to star").IsRequired();
+
+                    starPlayersCmd.OnExecute(() =>
+                    {
+                        var more = false;
+                        var playerName = name.Value;
+                        do
+                        {
+                            var success = operations_.StarPlayer(playerName);
+
+                            if (success)
+                            {
+                                Console.WriteLine($"Player Starred: {playerName}");
+                            }
+
+                            more = Prompt.GetYesNo("Wanna star more players?", true);
+
+                            if (more)
+                            {
+                                Console.WriteLine("Type player name you wish to star: ");
+                                playerName = Console.ReadLine();
+                            }
+
+                        } while (more);
+
+                        return;
+                    });
+                });
+
+                configCmd.Command("best", starPlayersCmd =>
+                {
+                    starPlayersCmd.Description = "Number of players you wish to search for: ";
+                    var number = starPlayersCmd.Argument<int?>("number of players", "Players to search for");
+
+                    starPlayersCmd.OnExecute(() =>
+                    {
+                        var playersDto = operations_.GetBestAvailablePlayers(number.ParsedValue);
+                       
+                        foreach(var p in playersDto)
+                        {
+                            Console.WriteLine($"{p.Name}, {string.Join("/", p.Positions)}, {p.Ranking}");
+                        }
+
+                        return;
                     });
                 });
             });

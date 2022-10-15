@@ -40,6 +40,11 @@
         /// <summary>
         /// 
         /// </summary>
+        public DbSet<ProjectionTotal> ProjectionTotals { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public NBADbContext()
         {
             IConfigurationBuilder builder = new ConfigurationBuilder()
@@ -130,6 +135,8 @@
             modelBuilder.HasPostgresEnum<Constants.PositionTypeId>();
             modelBuilder.HasPostgresEnum<Constants.ProjectionTypeId>();
             modelBuilder.HasPostgresEnum<Constants.ProjectionTotalsTypeId>();
+
+            modelBuilder.HasDefaultSchema("public");
 
             modelBuilder.HasCollation("nba_collation", locale: "en-u-ks-primary", provider: "icu", deterministic: false);
 

@@ -2,7 +2,7 @@
   "profiles": {
     "FantasyNbaDraftConsole": {
       "commandName": "Project",
-      "commandLineArgs": "database star_players \"NIKOLA JOKIC\""
+      "commandLineArgs": "draft best"
     }
   }
 }
