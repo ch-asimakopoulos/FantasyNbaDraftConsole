@@ -131,7 +131,18 @@
             modelBuilder.HasPostgresEnum<Constants.ProjectionTypeId>();
             modelBuilder.HasPostgresEnum<Constants.ProjectionTotalsTypeId>();
 
+            modelBuilder.HasCollation("nba_collation", locale: "en-u-ks-primary", provider: "icu", deterministic: false);
+
             base.OnModelCreating(modelBuilder);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="configurationBuilder"></param>
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            configurationBuilder.Properties<string>().UseCollation("nba_collation");
         }
 
         /// <summary>

@@ -4,14 +4,12 @@
     using System.IO;
     using System.Linq;
     using System.Globalization;
+    using System.Collections.Generic;
 
     using Microsoft.EntityFrameworkCore;
 
     using CsvHelper;
     using McMaster.Extensions.CommandLineUtils;
-    using CsvHelper.Configuration;
-    using FantasyNbaDraftConsole.Constants;
-    using System.Collections.Generic;
 
     /// <summary>
     /// 
@@ -154,6 +152,40 @@
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public bool StarPlayer(string name)
+        {
+            using (var db = new Data.NBADbContext())
+            {
+                try
+                {
+                    // Find Player
+                    var presult = db.Players.FirstOrDefault(p => name == p.Name);
+
+                    if (presult == null)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        presult.Starred = true;
+                        db.SaveChanges();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <returns></returns>
         public void InitializeDraftPositions()
         {
@@ -255,6 +287,49 @@
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="positions"></param>
+        /// <returns></returns>
+        private IEnumerable<Data.Models.Position> MapToPositions(string[] positions)
+        {
+            var positionIds = new HashSet<Constants.PositionTypeId>();
+
+            foreach (var p in positions)
+            {
+                switch (p)
+                {
+                    case "PG":
+                        positionIds.Add(Constants.PositionTypeId.Guard);
+                        positionIds.Add(Constants.PositionTypeId.PointGuard);
+                        break;
+                    case "SG":
+                        positionIds.Add(Constants.PositionTypeId.Guard);
+                        positionIds.Add(Constants.PositionTypeId.ShootingGuard);
+                        break;
+                    case "SF":
+                        positionIds.Add(Constants.PositionTypeId.Forward);
+                        positionIds.Add(Constants.PositionTypeId.SmallForward);
+                        break;
+                    case "PF":
+                        positionIds.Add(Constants.PositionTypeId.Forward);
+                        positionIds.Add(Constants.PositionTypeId.PowerForward);
+                        break;
+                    case "C":
+                        positionIds.Add(Constants.PositionTypeId.Center);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            return positionIds.Select(p => new Data.Models.Position
+            {
+                PositionTypeId = p
+            });
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="row"></param>
         /// <returns></returns>
         private Data.Models.Player MapRowToPlayer(Csv.ImportPlayers.ImportPlayersRow row)
@@ -262,25 +337,26 @@
             var player = new Data.Models.Player();
 
             player.Name = row.Name;
+            player.NbaTeam = row.NbaTeam;
 
             var positions = row.Positions.Split("/");
             player.Positions.AddRange(MapToPositions(positions));
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.TotalRanking,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.TotalRanking,
                 ProjectionValue = Convert.ToDecimal(row.TotalRanking, CultureInfo.InvariantCulture)
             });
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.GamesPlayed,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.GamesPlayed,
                 ProjectionValue = Convert.ToDecimal(row.Games, CultureInfo.InvariantCulture)
             });
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.MinutesPerGame,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.MinutesPerGame,
                 ProjectionValue = Convert.ToDecimal(row.MinutesPerGame, CultureInfo.InvariantCulture)
             });
 
@@ -288,13 +364,13 @@
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.Turnovers,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.Turnovers,
                 ProjectionValue = Convert.ToDecimal(turnoverInfo[0], CultureInfo.InvariantCulture)
             });
 
             player.Projections.Add(new Data.Models.Projection
             {
-                ProjectionTypeId = ProjectionTypeId.Turnovers,
+                ProjectionTypeId = Constants.ProjectionTypeId.Turnovers,
                 ProjectionValue = Convert.ToDecimal(turnoverInfo[1], CultureInfo.InvariantCulture)
             });
 
@@ -302,13 +378,13 @@
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.Steals,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.Steals,
                 ProjectionValue = Convert.ToDecimal(stealsInfo[0], CultureInfo.InvariantCulture)
             });
 
             player.Projections.Add(new Data.Models.Projection
             {
-                ProjectionTypeId = ProjectionTypeId.Steals,
+                ProjectionTypeId = Constants.ProjectionTypeId.Steals,
                 ProjectionValue = Convert.ToDecimal(stealsInfo[1], CultureInfo.InvariantCulture)
             });
 
@@ -316,13 +392,13 @@
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.Blocks,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.Blocks,
                 ProjectionValue = Convert.ToDecimal(blocksInfo[0], CultureInfo.InvariantCulture)
             });
 
             player.Projections.Add(new Data.Models.Projection
             {
-                ProjectionTypeId = ProjectionTypeId.Blocks,
+                ProjectionTypeId = Constants.ProjectionTypeId.Blocks,
                 ProjectionValue = Convert.ToDecimal(blocksInfo[1], CultureInfo.InvariantCulture)
             });
 
@@ -330,13 +406,13 @@
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.Assists,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.Assists,
                 ProjectionValue = Convert.ToDecimal(assistsInfo[0], CultureInfo.InvariantCulture)
             });
 
             player.Projections.Add(new Data.Models.Projection
             {
-                ProjectionTypeId = ProjectionTypeId.Assists,
+                ProjectionTypeId = Constants.ProjectionTypeId.Assists,
                 ProjectionValue = Convert.ToDecimal(assistsInfo[1], CultureInfo.InvariantCulture)
             });
 
@@ -344,13 +420,13 @@
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.Rebounds,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.Rebounds,
                 ProjectionValue = Convert.ToDecimal(reboundsInfo[0], CultureInfo.InvariantCulture)
             });
 
             player.Projections.Add(new Data.Models.Projection
             {
-                ProjectionTypeId = ProjectionTypeId.Rebounds,
+                ProjectionTypeId = Constants.ProjectionTypeId.Rebounds,
                 ProjectionValue = Convert.ToDecimal(reboundsInfo[1], CultureInfo.InvariantCulture)
             });
 
@@ -358,13 +434,13 @@
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.Points,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.Points,
                 ProjectionValue = Convert.ToDecimal(pointsInfo[0], CultureInfo.InvariantCulture)
             });
 
             player.Projections.Add(new Data.Models.Projection
             {
-                ProjectionTypeId = ProjectionTypeId.Points,
+                ProjectionTypeId = Constants.ProjectionTypeId.Points,
                 ProjectionValue = Convert.ToDecimal(pointsInfo[1], CultureInfo.InvariantCulture)
             });
 
@@ -372,13 +448,13 @@
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.ThreePointersMade,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.ThreePointersMade,
                 ProjectionValue = Convert.ToDecimal(threePointersInfo[0], CultureInfo.InvariantCulture)
             });
 
             player.Projections.Add(new Data.Models.Projection
             {
-                ProjectionTypeId = ProjectionTypeId.ThreePointersMade,
+                ProjectionTypeId = Constants.ProjectionTypeId.ThreePointersMade,
                 ProjectionValue = Convert.ToDecimal(threePointersInfo[1], CultureInfo.InvariantCulture)
             });
 
@@ -390,19 +466,19 @@
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.FreeThrowsAttempted,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.FreeThrowsAttempted,
                 ProjectionValue = Convert.ToDecimal(freeThrowsAttempted, CultureInfo.InvariantCulture)
             });
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.FreeThrowsMade,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.FreeThrowsMade,
                 ProjectionValue = Convert.ToDecimal(freeThrowsMade, CultureInfo.InvariantCulture)
             });
 
             player.Projections.Add(new Data.Models.Projection
             {
-                ProjectionTypeId = ProjectionTypeId.FreeThrowPercentage,
+                ProjectionTypeId = Constants.ProjectionTypeId.FreeThrowPercentage,
                 ProjectionValue = Convert.ToDecimal(freeThrowsInfo[2], CultureInfo.InvariantCulture)
             });
 
@@ -414,66 +490,23 @@
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.FieldGoalsAttempted,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.FieldGoalsAttempted,
                 ProjectionValue = Convert.ToDecimal(fieldgoalsAttempted, CultureInfo.InvariantCulture)
             });
 
             player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
             {
-                ProjectionTotalsTypeId = ProjectionTotalsTypeId.FieldGoalsMade,
+                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.FieldGoalsMade,
                 ProjectionValue = Convert.ToDecimal(fieldgoalsMade, CultureInfo.InvariantCulture)
             });
 
             player.Projections.Add(new Data.Models.Projection
             {
-                ProjectionTypeId = ProjectionTypeId.FieldGoalPercentage,
+                ProjectionTypeId = Constants.ProjectionTypeId.FieldGoalPercentage,
                 ProjectionValue = Convert.ToDecimal(fieldgoalsInfo[2], CultureInfo.InvariantCulture)
             });
 
             return player;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="positions"></param>
-        /// <returns></returns>
-        private IEnumerable<Data.Models.Position> MapToPositions(string[] positions)
-        {
-            var positionIds = new HashSet<PositionTypeId>();
-
-            foreach (var p in positions)
-            {
-                switch (p)
-                {
-                    case "PG":
-                        positionIds.Add(PositionTypeId.Guard);
-                        positionIds.Add(PositionTypeId.PointGuard);
-                        break;
-                    case "SG":
-                        positionIds.Add(PositionTypeId.Guard);
-                        positionIds.Add(PositionTypeId.ShootingGuard);
-                        break;
-                    case "SF":
-                        positionIds.Add(PositionTypeId.Forward);
-                        positionIds.Add(PositionTypeId.SmallForward);
-                        break;
-                    case "PF":
-                        positionIds.Add(PositionTypeId.Forward);
-                        positionIds.Add(PositionTypeId.PowerForward);
-                        break;
-                    case "C":
-                        positionIds.Add(PositionTypeId.Center);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            return positionIds.Select(p => new Data.Models.Position
-            {
-                PositionTypeId = p
-            });
         }
     }
 }

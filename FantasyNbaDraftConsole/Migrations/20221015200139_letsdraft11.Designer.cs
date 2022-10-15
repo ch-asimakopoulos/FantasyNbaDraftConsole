@@ -3,6 +3,7 @@ using System;
 using FantasyNbaDraftConsole.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FantasyNbaDraftConsole.Migrations
 {
     [DbContext(typeof(NBADbContext))]
-    partial class NBADbContextModelSnapshot : ModelSnapshot
+    [Migration("20221015200139_letsdraft11")]
+    partial class letsdraft11
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

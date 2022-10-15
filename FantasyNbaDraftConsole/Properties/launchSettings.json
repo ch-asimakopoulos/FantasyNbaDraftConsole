@@ -2,7 +2,7 @@
   "profiles": {
     "FantasyNbaDraftConsole": {
       "commandName": "Project",
-      "commandLineArgs": "database import_players \"C:\\2k23.csv\""
+      "commandLineArgs": "database star_players \"NIKOLA JOKIC\""
     }
   }
 }

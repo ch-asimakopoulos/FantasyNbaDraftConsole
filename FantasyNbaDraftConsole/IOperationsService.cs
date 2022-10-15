@@ -18,6 +18,11 @@
         /// <summary>
         /// 
         /// </summary>
+        public bool StarPlayer(string name);
+
+        /// <summary>
+        /// 
+        /// </summary>
         public void InitializeDraftPositions();
         
         /// <summary>

@@ -76,6 +76,38 @@ namespace FantasyNbaDraftConsole
                         return;
                     });
                 });
+
+                configCmd.Command("star_players", starPlayersCmd =>
+                {
+                    starPlayersCmd.Description = "Set player name you wish to star.";
+                    var name = starPlayersCmd.Argument<string>("player", "Player to star").IsRequired();
+
+                    starPlayersCmd.OnExecute(() =>
+                    {
+                        var more = false;
+                        var playerName = name.Value;
+                        do
+                        {
+                            var success = operations_.StarPlayer(playerName);
+
+                            if(success)
+                            {
+                                Console.WriteLine($"Player Starred: {playerName}");
+                            }
+
+                            more = Prompt.GetYesNo("Wanna star more players?", true);
+
+                            if (more)
+                            {
+                                Console.WriteLine("Type player name you wish to star: ");
+                                playerName = Console.ReadLine();
+                            }
+
+                        } while (more);
+
+                        return;
+                    });
+                });
             });
 
             app.HelpOption(inherited: true);
