@@ -26,19 +26,41 @@ namespace FantasyNbaDraftConsole
         /// 
         /// </summary>
         public void InitializeDraftPositions();
-        
+
         /// <summary>
         /// 
-        /// <param name="filePath"></param>
         /// </summary>
+        /// <param name="filePath"></param>
         /// <returns></returns>
         public int SeedPlayers(string filePath);
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name=""></param>
         /// <returns></returns>
-        public List<Data.Dto.BestPlayersInfo> GetBestAvailablePlayers(int? number);
+        public Data.Dto.DraftInfo GetDraftInfo(string leagueName);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public ICollection<Data.Dto.LiveRankingsInfo> GetLiveRankings();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="teamId"></param>
+        /// <param name="pickNumber"></param>
+        /// <returns></returns>
+        public bool PickPlayer(string name, byte teamId, short? pickNumber);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="number"></param>
+        /// <param name="projectionToPunt"></param>
+        /// <returns></returns>
+        public ICollection<Data.Dto.PlayersInfo> GetBestAvailablePlayers(int? number, ICollection<Constants.ProjectionTypeId> projectionToPunt);
     }
 }

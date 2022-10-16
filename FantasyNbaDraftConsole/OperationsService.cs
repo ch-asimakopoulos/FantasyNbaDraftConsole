@@ -10,12 +10,27 @@
 
     using CsvHelper;
     using McMaster.Extensions.CommandLineUtils;
+    using System.Runtime.Intrinsics.Arm;
 
     /// <summary>
     /// 
     /// </summary>
     public class OperationsService : IOperationsService
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        private IHelperMapper helperMapper_ { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="helperMapper"></param>
+        public OperationsService(IHelperMapper helperMapper)
+        {
+            helperMapper_ = helperMapper;
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -35,8 +50,8 @@
 
                     var isSnakeDraft = Prompt.GetYesNo("Is the draft a snake draft?", true);
 
-                    var lresult = db.Leagues.Where(l => l.LeagueInitialized 
-                        && l.LeagueName == leagueName 
+                    var lresult = db.Leagues.Where(l => l.LeagueInitialized
+                        && l.LeagueName == leagueName
                         && l.DraftConfig.Snake == isSnakeDraft
                         && l.DraftConfig.Rounds == draftRounds);
 
@@ -52,7 +67,8 @@
                         {
                             LeagueName = leagueName,
                             LeagueInitialized = true,
-                            DraftConfig = new Data.Models.DraftConfig {
+                            DraftConfig = new Data.Models.DraftConfig
+                            {
                                 Snake = isSnakeDraft,
                                 Rounds = draftRounds
                             }
@@ -108,7 +124,7 @@
                 try
                 {
                     // List draft positions
-                    var lresult = db.Leagues.Include(l => l.LeagueTeams).Where(l => l.LeagueInitialized && l.LeagueName == Constants.DraftConstants.LeagueName);
+                    var lresult = db.Leagues.AsNoTracking().Include(l => l.LeagueTeams).Where(l => l.LeagueInitialized && l.LeagueName == Constants.DraftConstants.LeagueName);
 
                     var league = default(Data.Models.League);
 
@@ -121,7 +137,7 @@
                         Console.WriteLine("Enter a name for the league: ");
                         var leagueName = Console.ReadLine();
 
-                        lresult = db.Leagues.Include(l => l.LeagueTeams).Where(l => l.LeagueInitialized && l.LeagueName == leagueName);
+                        lresult = db.Leagues.AsNoTracking().Include(l => l.LeagueTeams).Where(l => l.LeagueInitialized && l.LeagueName == leagueName);
                         if (lresult.Any())
                         {
                             league = lresult.Single();
@@ -154,7 +170,6 @@
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         public bool StarPlayer(string name)
         {
             using (var db = new Data.NBADbContext())
@@ -265,20 +280,21 @@
                             continue;
                         }
 
-                        var player = MapRowToPlayer(row);
+                        var player = helperMapper_.MapRowToPlayerModel(row);
 
                         if (player == null)
                         {
                             Console.WriteLine($"Error mapping {row.Name}");
                             continue;
-                        } else
+                        }
+                        else
                         {
                             db.Players.Add(player);
                             addedPlayers++;
                         }
                     }
                 }
-                    db.SaveChanges();
+                db.SaveChanges();
             }
 
             return addedPlayers;
@@ -287,251 +303,144 @@
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="number"></param>
+        /// <param name="name"></param>
+        /// <param name="teamId"></param>
+        /// <param name="currentPick"></param>
         /// <returns></returns>
-        public List<Data.Dto.BestPlayersInfo> GetBestAvailablePlayers(int? number)
+        public bool PickPlayer(string name, byte teamId, short? currentPick)
+        {
+            using (var db = new Data.NBADbContext())
+            {
+                try
+                {
+                    // Find Player
+                    var presult = db.Players.FirstOrDefault(p => name == p.Name);
+
+                    while (presult == null)
+                    {
+                        Console.WriteLine("Enter a valid name for the player picked: ");
+                        name = Console.ReadLine();
+
+                        presult = db.Players.FirstOrDefault(p => name == p.Name);
+
+                    };
+
+                    var tresult = db.Teams.Include(t => t.DraftedPlayers).FirstOrDefault(t => teamId == t.TeamId);
+
+                    while (tresult == null)
+                    {
+                        Console.WriteLine("Enter a valid name for the team that picked him: ");
+                        var team = Console.ReadLine();
+
+                        tresult = db.Teams.Include(t => t.DraftedPlayers).FirstOrDefault(t => team == t.TeamName);
+
+                    };
+
+                    presult.PickNumber = currentPick;
+                    tresult.DraftedPlayers.Add(presult);
+
+                    db.SaveChanges();
+
+                    Console.WriteLine($"Player {name} picked by {tresult.TeamName} with {currentPick} pick.");
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+
+            return true;
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public Data.Dto.DraftInfo GetDraftInfo(string leagueName)
+        {
+            using (var db = new Data.NBADbContext())
+            {
+                var league = db.Leagues.Include(l => l.DraftConfig).Include(l => l.LeagueTeams).First(l => l.LeagueName == leagueName && l.LeagueInitialized);
+
+                return new Data.Dto.DraftInfo
+                {
+                    Snake = league.DraftConfig.Snake,
+                    Rounds = league.DraftConfig.Rounds,
+                    TeamCount = (byte)league.LeagueTeams.Count(),
+                    TeamOrder = league.LeagueTeams.OrderBy(t => t.TeamDraftPosition).Select(t => (t.TeamId, t.TeamName)).ToArray()
+                };
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public ICollection<Data.Dto.LiveRankingsInfo> GetLiveRankings()
+        {
+            var liveRankings = new List<Data.Dto.LiveRankingsInfo>();
+
+            using (var db = new Data.NBADbContext())
+            {
+                foreach (var t in db.Teams.Include(t => t.DraftedPlayers).ThenInclude(p => p.ProjectionTotals).Include(t => t.DraftedPlayers).ThenInclude(p => p.Projections).Include(t => t.DraftedPlayers).ThenInclude(p => p.ProjectionTotals).AsNoTracking().ToList())
+                {
+                    liveRankings.Add(new Data.Dto.LiveRankingsInfo
+                    {
+                        PlayersDrafted = t.DraftedPlayers.Select(dp => new Data.Dto.PlayersInfo
+                        {
+                            Name = dp.Name,
+                            Positions = dp.Positions.Select(p => p.PositionTypeId.ToString()).ToList(),
+                            Ranking = dp.ProjectionTotals.First(pjt => pjt.ProjectionTotalsTypeId == Constants.ProjectionTotalsTypeId.TotalRanking).ProjectionValue
+                        }).ToList(),
+                        TeamName = t.TeamName,
+                        ProjectionTypeRankings = t.DraftedPlayers.SelectMany(dp => dp.Projections).GroupBy(grp => grp.ProjectionTypeId).ToDictionary(kvp => kvp.Key, kvp => kvp.Sum(prj => prj.ProjectionValue)),
+                    });
+                }
+            }
+
+            return liveRankings.OrderByDescending(lr => lr.PlayersDrafted.Sum(dp => dp.Ranking)).ToList();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="number"></param>
+        /// <param name="projectionsToPunt"></param>
+        /// <returns></returns>
+        public ICollection<Data.Dto.PlayersInfo> GetBestAvailablePlayers(int? number, ICollection<Constants.ProjectionTypeId> projectionsToPunt)
         {
             using (var db = new Data.NBADbContext())
             {
                 var toReturn = number ?? Constants.DraftConstants.PlayersToReturn;
+                if (projectionsToPunt.Any())
+                {
+                    return db.Players.AsNoTracking().Where(p => p.TeamId == null).OrderByDescending(p => p.ProjectionTotals.First(pjt => pjt.ProjectionTotalsTypeId == Constants.ProjectionTotalsTypeId.TotalRanking).ProjectionValue
+                     - p.Projections.Where(pj => projectionsToPunt.Contains(pj.ProjectionTypeId)).Sum(pj => pj.ProjectionValue)).Take(toReturn)
+                     .Select(p => new Data.Dto.PlayersInfo
+                     {
+                         Name = p.Name,
+                         Starred = p.Starred,
+                         Positions = p.Positions.Select(x => x.PositionTypeId.ToString()).ToList(),
+                         Ranking = p.ProjectionTotals.First(pjt => pjt.ProjectionTotalsTypeId == Constants.ProjectionTotalsTypeId.TotalRanking).ProjectionValue
+                                - p.Projections.Where(pj => projectionsToPunt.Contains(pj.ProjectionTypeId)).Sum(pj => pj.ProjectionValue)
+                     })
+                     .ToList();
+                }
 
-                return db.ProjectionTotals.Where(pjt => pjt.ProjectionTotalsTypeId == Constants.ProjectionTotalsTypeId.TotalRanking)
-                    .OrderByDescending(pjt => pjt.ProjectionValue).Take(toReturn)
-                    .Select(p => new Data.Dto.BestPlayersInfo
+                return db.Players.AsNoTracking().Where(p => p.TeamId == null)
+                    .OrderByDescending(p => p.ProjectionTotals.First(pjt => pjt.ProjectionTotalsTypeId == Constants.ProjectionTotalsTypeId.TotalRanking).ProjectionValue)
+                    .Take(toReturn)
+                    .Select(p => new Data.Dto.PlayersInfo
                     {
-                        Name = p.Player.Name,
-                        Ranking = p.ProjectionValue,
-                        Positions = p.Player.Positions.Select(x => x.PositionTypeId.ToString()).ToList()
+                        Name = p.Name,
+                        Starred = p.Starred,
+                        Positions = p.Positions.Select(x => x.PositionTypeId.ToString()).ToList(),
+                        Ranking = p.ProjectionTotals.First(pjt => pjt.ProjectionTotalsTypeId == Constants.ProjectionTotalsTypeId.TotalRanking).ProjectionValue
                     }
                     ).ToList();
             }
-
-
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="positions"></param>
-        /// <returns></returns>
-        private IEnumerable<Data.Models.Position> MapToPositions(string[] positions)
-        {
-            var positionIds = new HashSet<Constants.PositionTypeId>();
-
-            foreach (var p in positions)
-            {
-                switch (p)
-                {
-                    case "PG":
-                        positionIds.Add(Constants.PositionTypeId.Guard);
-                        positionIds.Add(Constants.PositionTypeId.PointGuard);
-                        break;
-                    case "SG":
-                        positionIds.Add(Constants.PositionTypeId.Guard);
-                        positionIds.Add(Constants.PositionTypeId.ShootingGuard);
-                        break;
-                    case "SF":
-                        positionIds.Add(Constants.PositionTypeId.Forward);
-                        positionIds.Add(Constants.PositionTypeId.SmallForward);
-                        break;
-                    case "PF":
-                        positionIds.Add(Constants.PositionTypeId.Forward);
-                        positionIds.Add(Constants.PositionTypeId.PowerForward);
-                        break;
-                    case "C":
-                        positionIds.Add(Constants.PositionTypeId.Center);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            return positionIds.Select(p => new Data.Models.Position
-            {
-                PositionTypeId = p
-            });
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="row"></param>
-        /// <returns></returns>
-        private Data.Models.Player MapRowToPlayer(Csv.ImportPlayers.ImportPlayersRow row)
-        {
-            var player = new Data.Models.Player();
-
-            player.Name = row.Name;
-            player.NbaTeam = row.NbaTeam;
-
-            var positions = row.Positions.Split("/");
-            player.Positions.AddRange(MapToPositions(positions));
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.TotalRanking,
-                ProjectionValue = Convert.ToDecimal(row.TotalRanking, CultureInfo.InvariantCulture)
-            });
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.GamesPlayed,
-                ProjectionValue = Convert.ToDecimal(row.Games, CultureInfo.InvariantCulture)
-            });
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.MinutesPerGame,
-                ProjectionValue = Convert.ToDecimal(row.MinutesPerGame, CultureInfo.InvariantCulture)
-            });
-
-            var turnoverInfo = row.Turnovers.Split(" ");
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.Turnovers,
-                ProjectionValue = Convert.ToDecimal(turnoverInfo[0], CultureInfo.InvariantCulture)
-            });
-
-            player.Projections.Add(new Data.Models.Projection
-            {
-                ProjectionTypeId = Constants.ProjectionTypeId.Turnovers,
-                ProjectionValue = Convert.ToDecimal(turnoverInfo[1], CultureInfo.InvariantCulture)
-            });
-
-            var stealsInfo = row.Steals.Split(" ");
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.Steals,
-                ProjectionValue = Convert.ToDecimal(stealsInfo[0], CultureInfo.InvariantCulture)
-            });
-
-            player.Projections.Add(new Data.Models.Projection
-            {
-                ProjectionTypeId = Constants.ProjectionTypeId.Steals,
-                ProjectionValue = Convert.ToDecimal(stealsInfo[1], CultureInfo.InvariantCulture)
-            });
-
-            var blocksInfo = row.Blocks.Split(" ");
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.Blocks,
-                ProjectionValue = Convert.ToDecimal(blocksInfo[0], CultureInfo.InvariantCulture)
-            });
-
-            player.Projections.Add(new Data.Models.Projection
-            {
-                ProjectionTypeId = Constants.ProjectionTypeId.Blocks,
-                ProjectionValue = Convert.ToDecimal(blocksInfo[1], CultureInfo.InvariantCulture)
-            });
-
-            var assistsInfo = row.Assists.Split(" ");
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.Assists,
-                ProjectionValue = Convert.ToDecimal(assistsInfo[0], CultureInfo.InvariantCulture)
-            });
-
-            player.Projections.Add(new Data.Models.Projection
-            {
-                ProjectionTypeId = Constants.ProjectionTypeId.Assists,
-                ProjectionValue = Convert.ToDecimal(assistsInfo[1], CultureInfo.InvariantCulture)
-            });
-
-            var reboundsInfo = row.TotalRebounds.Split(" ");
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.Rebounds,
-                ProjectionValue = Convert.ToDecimal(reboundsInfo[0], CultureInfo.InvariantCulture)
-            });
-
-            player.Projections.Add(new Data.Models.Projection
-            {
-                ProjectionTypeId = Constants.ProjectionTypeId.Rebounds,
-                ProjectionValue = Convert.ToDecimal(reboundsInfo[1], CultureInfo.InvariantCulture)
-            });
-
-            var pointsInfo = row.Points.Split(" ");
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.Points,
-                ProjectionValue = Convert.ToDecimal(pointsInfo[0], CultureInfo.InvariantCulture)
-            });
-
-            player.Projections.Add(new Data.Models.Projection
-            {
-                ProjectionTypeId = Constants.ProjectionTypeId.Points,
-                ProjectionValue = Convert.ToDecimal(pointsInfo[1], CultureInfo.InvariantCulture)
-            });
-
-            var threePointersInfo = row.ThreePointersMade.Split(" ");
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.ThreePointersMade,
-                ProjectionValue = Convert.ToDecimal(threePointersInfo[0], CultureInfo.InvariantCulture)
-            });
-
-            player.Projections.Add(new Data.Models.Projection
-            {
-                ProjectionTypeId = Constants.ProjectionTypeId.ThreePointersMade,
-                ProjectionValue = Convert.ToDecimal(threePointersInfo[1], CultureInfo.InvariantCulture)
-            });
-
-            var freeThrowsInfo = row.FreeThrowPercentage.Split(" ");
-
-            var freeThrowAttemptsInfo = freeThrowsInfo[1].Split("/");
-            var freeThrowsMade = freeThrowAttemptsInfo[0].Split("(")[1];
-            var freeThrowsAttempted = freeThrowAttemptsInfo[1].Split(")")[0];
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.FreeThrowsAttempted,
-                ProjectionValue = Convert.ToDecimal(freeThrowsAttempted, CultureInfo.InvariantCulture)
-            });
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.FreeThrowsMade,
-                ProjectionValue = Convert.ToDecimal(freeThrowsMade, CultureInfo.InvariantCulture)
-            });
-
-            player.Projections.Add(new Data.Models.Projection
-            {
-                ProjectionTypeId = Constants.ProjectionTypeId.FreeThrowPercentage,
-                ProjectionValue = Convert.ToDecimal(freeThrowsInfo[2], CultureInfo.InvariantCulture)
-            });
-
-            var fieldgoalsInfo = row.FieldGoalPercentage.Split(" ");
-
-            var fieldgoalAttemptsInfo = fieldgoalsInfo[1].Split("/");
-            var fieldgoalsMade = fieldgoalAttemptsInfo[0].Split("(")[1];
-            var fieldgoalsAttempted = fieldgoalAttemptsInfo[1].Split(")")[0];
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.FieldGoalsAttempted,
-                ProjectionValue = Convert.ToDecimal(fieldgoalsAttempted, CultureInfo.InvariantCulture)
-            });
-
-            player.ProjectionTotals.Add(new Data.Models.ProjectionTotal
-            {
-                ProjectionTotalsTypeId = Constants.ProjectionTotalsTypeId.FieldGoalsMade,
-                ProjectionValue = Convert.ToDecimal(fieldgoalsMade, CultureInfo.InvariantCulture)
-            });
-
-            player.Projections.Add(new Data.Models.Projection
-            {
-                ProjectionTypeId = Constants.ProjectionTypeId.FieldGoalPercentage,
-                ProjectionValue = Convert.ToDecimal(fieldgoalsInfo[2], CultureInfo.InvariantCulture)
-            });
-
-            return player;
         }
     }
 }

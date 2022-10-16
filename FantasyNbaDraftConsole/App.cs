@@ -2,9 +2,11 @@
 namespace FantasyNbaDraftConsole
 {
     using System;
-    using System.Linq;
+    using System.Text.Json;
+    using System.Collections.Generic;
+
     using McMaster.Extensions.CommandLineUtils;
-    using Microsoft.VisualBasic;
+    using System.Linq;
 
     /// <summary>
     /// 
@@ -14,15 +16,23 @@ namespace FantasyNbaDraftConsole
         /// <summary>
         /// 
         /// </summary>
+        private readonly IHelperMapper helperMapper_;
+
+        /// <summary>
+        /// 
+        /// </summary>
         private readonly IOperationsService operations_;
 
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="helperMapper"></param>
         /// <param name="operations"></param>
-        public App(IOperationsService operations)
+        public App(IHelperMapper helperMapper,
+            IOperationsService operations)
         {
             operations_ = operations;
+            helperMapper_ = helperMapper;
         }
 
         /// <summary>
@@ -38,6 +48,9 @@ namespace FantasyNbaDraftConsole
                 Name = "fantasy-nba-draft",
                 Description = "Welcome to your fantasy league's 2k23 Nba Draft",
             };
+
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.ForegroundColor = ConsoleColor.Yellow;
 
             app.HelpOption(inherited: true);
             app.Command("database", configCmd =>
@@ -77,6 +90,39 @@ namespace FantasyNbaDraftConsole
                         return;
                     });
                 });
+
+                configCmd.Command("star_players", starPlayersCmd =>
+                {
+                    starPlayersCmd.Description = "Set player name you wish to star.";
+                    var name = starPlayersCmd.Argument<string>("player", "Player to star").IsRequired();
+
+                    starPlayersCmd.OnExecute(() =>
+                    {
+                        var more = false;
+                        var playerName = name.Value;
+                        do
+                        {
+                            var success = operations_.StarPlayer(playerName);
+
+                            if (success)
+                            {
+                                Console.WriteLine($"Player Starred: {playerName}");
+                            }
+
+                            more = Prompt.GetYesNo("Wanna star more players?", true);
+
+                            if (more)
+                            {
+                                Console.WriteLine("Type player name you wish to star: ");
+                                playerName = Console.ReadLine();
+                            }
+
+                        } while (more);
+
+                        return;
+                    });
+                });
+
             });
 
             app.HelpOption(inherited: true);
@@ -89,7 +135,7 @@ namespace FantasyNbaDraftConsole
                     return 1;
                 });
 
-                configCmd.Command("positions", pCmd =>
+                configCmd.Command("teams", pCmd =>
                 {
                     pCmd.OnExecute(() =>
                     {
@@ -127,46 +173,119 @@ namespace FantasyNbaDraftConsole
                     });
                 });
 
-                configCmd.Command("star_players", starPlayersCmd =>
+                configCmd.Command("pick", pickPlayerCmd =>
                 {
-                    starPlayersCmd.Description = "Set player name you wish to star.";
-                    var name = starPlayersCmd.Argument<string>("player", "Player to star").IsRequired();
-
-                    starPlayersCmd.OnExecute(() =>
+                    pickPlayerCmd.OnExecute(() =>
                     {
-                        var more = false;
-                        var playerName = name.Value;
+                        var draftOver = true;
+                        short currentPick = 1;
+                        var teamPicking = 0;
+                        var currentRound = 1;
+                        var currentRoundPicks = 0;
+
+                        Console.WriteLine("Specify your league: ");
+                        var leagueName = Console.ReadLine();
+
+                        var draftInfo = operations_.GetDraftInfo(leagueName);
+
+                        Console.WriteLine($"Welcome to {leagueName}'s annual draft. Let us begin: ");
+
                         do
                         {
-                            var success = operations_.StarPlayer(playerName);
+                            Console.WriteLine($"Round {currentRound}, Team picking {draftInfo.TeamOrder[teamPicking].Item2}, Current Pick Overall {currentPick}, Enter Pick Name: ");
+                            var playerName = Console.ReadLine();
 
-                            if (success)
+                            var success = true;
+
+                            do
                             {
-                                Console.WriteLine($"Player Starred: {playerName}");
+                                success = operations_.PickPlayer(playerName, draftInfo.TeamOrder[teamPicking].Item1, currentPick);
+
+                                if (success)
+                                {
+                                    currentPick++;
+                                    teamPicking = draftInfo.Snake && (currentRound % 2 == 0) ? teamPicking - 1 : teamPicking + 1;
+
+                                    if (++currentRoundPicks == draftInfo.TeamCount)
+                                    {
+                                        currentRound++;
+                                        currentRoundPicks = 0;
+                                        teamPicking = draftInfo.Snake && (currentRound % 2 == 0) ? draftInfo.TeamCount - 1 : 0;
+                                    }
+                                }
+                            } while (!success);
+
+                            var getBestInfo = Prompt.GetYesNo("Wanna get best available info?", true);
+
+                            while(getBestInfo)
+                            {
+                                Console.WriteLine($"Limit number of results or press enter for default {Constants.DraftConstants.PlayersToReturn}");
+
+                                var line = Console.ReadLine();
+                                var toReturn = default(int?);
+
+                                if(!int.TryParse(line, out var n))
+                                {
+                                    toReturn = Constants.DraftConstants.PlayersToReturn;
+                                } else
+                                {
+                                    toReturn = n;
+                                }
+
+                                Console.WriteLine("Select Categories To Punt (comma seperated) or press enter");
+
+                                var categoriesToPunt = Console.ReadLine().Split(",");
+
+                                var playersDto = operations_.GetBestAvailablePlayers(toReturn, helperMapper_.MapToProjectionTypeId(categoriesToPunt));
+
+                                foreach (var p in playersDto)
+                                {
+                                    Console.WriteLine($"{p.Name}, {string.Join("/", p.Positions)}, {p.Ranking}");
+                                }
+
+                                getBestInfo = Prompt.GetYesNo("Do you need any more best info?", true);
+
+                            };
+
+                            var liveRankings = Prompt.GetYesNo("Wanna get live rankings?", true);
+
+                            if (liveRankings)
+                            {
+                                var liveRankingList = operations_.GetLiveRankings();
+
+                                Console.WriteLine(JsonSerializer.Serialize(liveRankingList));
+
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine(JsonSerializer.Serialize(liveRankingList.Select(lr => new
+                                {
+                                    lr.TeamName,
+                                    TeamTotals  = lr.ProjectionTypeRankings.Values.Sum()
+                                }).ToList()));
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                            }
+                            
+                            if (currentRound < draftInfo.Rounds)
+                            {
+                                draftOver = false;
+                            } else
+                            {
+                                draftOver = Prompt.GetYesNo("Is draft over?", true);
                             }
 
-                            more = Prompt.GetYesNo("Wanna star more players?", true);
-
-                            if (more)
-                            {
-                                Console.WriteLine("Type player name you wish to star: ");
-                                playerName = Console.ReadLine();
-                            }
-
-                        } while (more);
+                        } while (!draftOver);
 
                         return;
                     });
                 });
 
-                configCmd.Command("best", starPlayersCmd =>
+                configCmd.Command("best", bestPlayersCmd =>
                 {
-                    starPlayersCmd.Description = "Number of players you wish to search for: ";
-                    var number = starPlayersCmd.Argument<int?>("number of players", "Players to search for");
+                    bestPlayersCmd.Description = "Number of players you wish to search for: ";
+                    var number = bestPlayersCmd.Argument<int?>("number of players", "Players to search for");
 
-                    starPlayersCmd.OnExecute(() =>
+                    bestPlayersCmd.OnExecute(() =>
                     {
-                        var playersDto = operations_.GetBestAvailablePlayers(number.ParsedValue);
+                        var playersDto = operations_.GetBestAvailablePlayers(number.ParsedValue, new List<Constants.ProjectionTypeId>());
                        
                         foreach(var p in playersDto)
                         {

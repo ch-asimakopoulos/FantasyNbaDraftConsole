@@ -5,7 +5,7 @@
     /// <summary>
     /// 
     /// </summary>
-    public class BestPlayersInfo
+    public class PlayersInfo
     {
         /// <summary>
         /// 
@@ -15,11 +15,16 @@
         /// <summary>
         /// 
         /// </summary>
+        public bool Starred { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public decimal Ranking { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        public List<string> Positions { get; set; }
+        public ICollection<string> Positions { get; set; }
     }
 }

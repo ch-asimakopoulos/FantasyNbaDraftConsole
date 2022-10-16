@@ -41,6 +41,11 @@
         /// <summary>
         /// 
         /// </summary>
+        public short? PickNumber { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public virtual Team Team { get; set; }
 
         /// <summary>

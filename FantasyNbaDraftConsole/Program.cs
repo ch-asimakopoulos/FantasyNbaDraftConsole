@@ -16,6 +16,7 @@
             var builder = new ContainerBuilder();
 
             builder.RegisterType<App>();
+            builder.RegisterType<HelperMapper>().As<IHelperMapper>();
             builder.RegisterType<OperationsService>().As<IOperationsService>();
 
             return builder.Build();
