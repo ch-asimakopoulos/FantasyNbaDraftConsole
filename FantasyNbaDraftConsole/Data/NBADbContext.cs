@@ -106,7 +106,20 @@
                 .HasMany(p => p.ProjectionTotals);
 
             modelBuilder.Entity<Player>()
-                .HasIndex(p => p.Name);
+                .HasIndex(p => p.Name)
+                .IsUnique();
+
+            modelBuilder.Entity<Team>()
+                .HasIndex(t => t.Name)
+                .IsUnique();
+
+            modelBuilder.Entity<Player>()
+                .HasIndex(p => p.PickNumber)
+                .IsUnique();
+
+            modelBuilder.Entity<Team>()
+                .HasIndex(t => t.DraftPosition)
+                .IsUnique();
 
             modelBuilder.Entity<DraftConfig>()
                 .HasKey(dc => dc.LeagueId);

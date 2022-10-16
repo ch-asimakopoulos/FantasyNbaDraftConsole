@@ -91,8 +91,8 @@
                         var team = new Data.Models.Team
                         {
                             League = league,
-                            TeamName = teamName,
-                            TeamDraftPosition = i
+                            Name = teamName,
+                            DraftPosition = i
                         };
 
                         db.Teams.Add(team);
@@ -148,9 +148,9 @@
                         }
                     }
 
-                    foreach (var team in league.LeagueTeams.OrderBy(t => t.TeamDraftPosition))
+                    foreach (var team in league.LeagueTeams.OrderBy(t => t.DraftPosition))
                     {
-                        Console.WriteLine($"Team's {team.TeamName} draft position: {team.TeamDraftPosition}");
+                        Console.WriteLine($"Team's {team.Name} draft position: {team.DraftPosition}");
                     }
 
                     Console.WriteLine("Press any key to exit...");
@@ -235,13 +235,13 @@
 
                     foreach (var team in league.LeagueTeams)
                     {
-                        Console.WriteLine($"Enter team's {team.TeamName} draft position: ");
+                        Console.WriteLine($"Enter team's {team.Name} draft position: ");
                         var draftPosition = Convert.ToByte(Console.ReadLine());
 
-                        team.TeamDraftPosition = draftPosition;
+                        team.DraftPosition = draftPosition;
                         db.SaveChanges();
 
-                        Console.WriteLine($"Team's {team.TeamName} draft position is: {draftPosition}!");
+                        Console.WriteLine($"Team's {team.Name} draft position is: {draftPosition}!");
                     }
 
                     Console.WriteLine("Press any key to exit...");
@@ -332,7 +332,7 @@
                         Console.WriteLine("Enter a valid name for the team that picked him: ");
                         var team = Console.ReadLine();
 
-                        tresult = db.Teams.Include(t => t.DraftedPlayers).FirstOrDefault(t => team == t.TeamName);
+                        tresult = db.Teams.Include(t => t.DraftedPlayers).FirstOrDefault(t => team == t.Name);
 
                     };
 
@@ -341,7 +341,7 @@
 
                     db.SaveChanges();
 
-                    Console.WriteLine($"Player {name} picked by {tresult.TeamName} with {currentPick} pick.");
+                    Console.WriteLine($"Player {name} picked by {tresult.Name} with {currentPick} pick.");
 
                 }
                 catch (Exception ex)
@@ -369,7 +369,7 @@
                     Snake = league.DraftConfig.Snake,
                     Rounds = league.DraftConfig.Rounds,
                     TeamCount = (byte)league.LeagueTeams.Count(),
-                    TeamOrder = league.LeagueTeams.OrderBy(t => t.TeamDraftPosition).Select(t => (t.TeamId, t.TeamName)).ToArray()
+                    TeamOrder = league.LeagueTeams.OrderBy(t => t.DraftPosition).Select(t => (t.TeamId, t.Name)).ToArray()
                 };
             }
         }
@@ -394,7 +394,7 @@
                             Positions = dp.Positions.Select(p => p.PositionTypeId.ToString()).ToList(),
                             Ranking = dp.ProjectionTotals.First(pjt => pjt.ProjectionTotalsTypeId == Constants.ProjectionTotalsTypeId.TotalRanking).ProjectionValue
                         }).ToList(),
-                        TeamName = t.TeamName,
+                        TeamName = t.Name,
                         ProjectionTypeRankings = t.DraftedPlayers.SelectMany(dp => dp.Projections).GroupBy(grp => grp.ProjectionTypeId).ToDictionary(kvp => kvp.Key, kvp => kvp.Sum(prj => prj.ProjectionValue)),
                     });
                 }

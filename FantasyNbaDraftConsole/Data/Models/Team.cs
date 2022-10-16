@@ -10,6 +10,11 @@
         /// <summary>
         /// 
         /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public byte TeamId { get; set; }
 
         /// <summary>
@@ -20,18 +25,13 @@
         /// <summary>
         /// 
         /// </summary>
-        public string TeamName { get; set; }
+        public byte DraftPosition { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
         public virtual League League { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public byte TeamDraftPosition { get; set; }
-
+         
         /// <summary>
         /// 
         /// </summary>

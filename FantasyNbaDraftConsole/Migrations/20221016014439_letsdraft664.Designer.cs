@@ -3,6 +3,7 @@ using System;
 using FantasyNbaDraftConsole.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FantasyNbaDraftConsole.Migrations
 {
     [DbContext(typeof(NBADbContext))]
-    partial class NBADbContextModelSnapshot : ModelSnapshot
+    [Migration("20221016014439_letsdraft664")]
+    partial class letsdraft664
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -93,11 +95,7 @@ namespace FantasyNbaDraftConsole.Migrations
 
                     b.HasKey("PlayerId");
 
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.HasIndex("PickNumber")
-                        .IsUnique();
+                    b.HasIndex("Name");
 
                     b.HasIndex("TeamId");
 
@@ -169,13 +167,9 @@ namespace FantasyNbaDraftConsole.Migrations
 
                     b.HasKey("TeamId");
 
-                    b.HasIndex("DraftPosition")
-                        .IsUnique();
-
                     b.HasIndex("LeagueId");
 
-                    b.HasIndex("Name")
-                        .IsUnique();
+                    b.HasIndex("Name");
 
                     b.ToTable("Teams", "public");
                 });

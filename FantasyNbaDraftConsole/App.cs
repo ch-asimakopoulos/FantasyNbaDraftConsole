@@ -50,7 +50,7 @@ namespace FantasyNbaDraftConsole
             };
 
             Console.BackgroundColor = ConsoleColor.Black;
-            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
 
             app.HelpOption(inherited: true);
             app.Command("database", configCmd =>
@@ -93,15 +93,14 @@ namespace FantasyNbaDraftConsole
 
                 configCmd.Command("star_players", starPlayersCmd =>
                 {
-                    starPlayersCmd.Description = "Set player name you wish to star.";
-                    var name = starPlayersCmd.Argument<string>("player", "Player to star").IsRequired();
-
                     starPlayersCmd.OnExecute(() =>
                     {
                         var more = false;
-                        var playerName = name.Value;
                         do
                         {
+                            Console.WriteLine("Type player name you wish to star: ");
+                            var playerName = Console.ReadLine();
+
                             var success = operations_.StarPlayer(playerName);
 
                             if (success)
@@ -110,13 +109,6 @@ namespace FantasyNbaDraftConsole
                             }
 
                             more = Prompt.GetYesNo("Wanna star more players?", true);
-
-                            if (more)
-                            {
-                                Console.WriteLine("Type player name you wish to star: ");
-                                playerName = Console.ReadLine();
-                            }
-
                         } while (more);
 
                         return;
@@ -237,15 +229,19 @@ namespace FantasyNbaDraftConsole
                                 var categoriesToPunt = Console.ReadLine().Split(",");
 
                                 var playersDto = operations_.GetBestAvailablePlayers(toReturn, helperMapper_.MapToProjectionTypeId(categoriesToPunt));
+                                
+                                Console.ForegroundColor = ConsoleColor.DarkMagenta;
 
                                 foreach (var p in playersDto)
                                 {
-                                    Console.WriteLine($"{p.Name}, {string.Join("/", p.Positions)}, {p.Ranking}");
+                                    Console.WriteLine($"{p.Name}, {(p.Starred ? '*' : ' ')} {string.Join("/", p.Positions)}, {p.Ranking}");
                                 }
 
                                 getBestInfo = Prompt.GetYesNo("Do you need any more best info?", true);
 
                             };
+
+                            Console.ForegroundColor = ConsoleColor.DarkYellow;
 
                             var liveRankings = Prompt.GetYesNo("Wanna get live rankings?", true);
 
@@ -255,13 +251,13 @@ namespace FantasyNbaDraftConsole
 
                                 Console.WriteLine(JsonSerializer.Serialize(liveRankingList));
 
-                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.ForegroundColor = ConsoleColor.DarkRed;
                                 Console.WriteLine(JsonSerializer.Serialize(liveRankingList.Select(lr => new
                                 {
                                     lr.TeamName,
                                     TeamTotals  = lr.ProjectionTypeRankings.Values.Sum()
                                 }).ToList()));
-                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.ForegroundColor = ConsoleColor.DarkYellow;
                             }
                             
                             if (currentRound < draftInfo.Rounds)
